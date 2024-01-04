@@ -1,0 +1,49 @@
+**************************************
+*Prep & analyse simulated height data*
+**************************************
+
+*call the simulated height data
+use "PATH\Simulated_height.dta", clear
+
+*reshape the data from wide to long for trajetcories analysis
+reshape long height_ age_t, i(subject) j(occ)
+order height_ age_t, after(occ)
+
+*sort
+sort subject occ
+
+*rename vars
+rename height_ hei
+rename age_t age
+
+*dropping missing data
+drop if hei==. | age==.
+
+*declare data to be panel
+xtset subject occ
+
+*create new age vars
+sum age
+gen agemc = age-12.01612
+gen agemc2 = agemc^2
+
+*analysis
+mixed hei agemc agemc2 || subject: agemc agemc2, cov(uns)
+
+*predict and plot
+predict yhat
+
+twoway line yhat age, sort
+
+********************************************************************************
+*sex interactions
+*analysis and prediction
+mixed hei c.agemc##i.female c.agemc2##i.female || subject: agemc agemc2, cov(uns)
+
+predict yhat_sim_sex
+
+*figure
+twoway line yhat_sim_sex age_new if female==0, sort || ///
+line yhat_sim_sex age_new if female==1, sort || ///
+line yhat_real_sex age_new if female==0, sort || ///
+line yhat_real_sex age_new if female==1, sort 

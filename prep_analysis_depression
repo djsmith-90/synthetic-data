@@ -1,0 +1,132 @@
+*************************************************************
+*Prep and analysis for the synthetic depression trajectories* 
+*************************************************************
+
+cd "PATH\Synthpop data note"
+
+*call the data
+use "PATH\real_depression_data.dta", clear
+
+*keep only the data we need
+keep aln qlet fd003c ff0011a fg0011a ccs9991a cct9991a CCXD006 YPA9020 YPB9992 YPC2650 /// ages
+mat_edu finance_b epds_post_b ///
+mfq_t1 mfq_t2 mfq_t3 mfq_t4 mfq_t5 mfq_t6 mfq_t7 mfq_t8 mfq_t9 ///
+mfq_t11_b selfe
+
+gen age_t1 = fd003c/12
+
+foreach var of varlist ff0011a fg0011a ccs9991a cct9991a CCXD006 YPA9020 YPB9992 YPC2650{
+recode `var' -10=. -1=.
+}
+
+gen age_t2 = ff0011a/12
+gen age_t3 = fg0011a/12
+gen age_t4 = ccs9991a/12
+gen age_t5 = CCXD006/12
+gen age_t6 = cct9991a/12
+gen age_t7 = YPA9020/12
+gen age_t8 = YPB9992/12
+gen age_t9 = YPC2650/12
+
+*drop unncessary variables
+drop fd003c- YPC2650
+
+*rename vars for mplus
+rename finance_b fin_b
+rename epds_post_b mat_dep
+rename mfq_t11_b dep_26
+
+*gen subject var
+egen subject = group(aln qlet)
+
+order subject 
+
+*save cleaned data set for simulation
+save "PATH\real_depression_wide.dta", replace
+
+*convet to mplus
+stata2mplus using real_depression_wide.dta, replace
+
+*drop aln qlet
+drop subject aln qlet
+
+*save a new dataset ready for simulation
+save "PATH\real_depression_wide_no_subject.dta", replace
+
+********************************************************************************
+
+*now prep the simulated dataset following it being in R and synthpop
+
+use "PATH\Simulated_depression.dta", clear
+
+*gen a subject id
+gen subject = _n
+
+*order subject
+order subject
+
+save "PATH\Simulated_depression_mplus.dta", clear (NOTE THIS IS THE FILE ON THE GITHUB)
+
+*convet to mplus
+stata2mplus using Simulated_depression.dta, replace
+
+********************************************************************************
+
+*Analysis in Mplus
+
+Title: Simulated analysis
+Data:
+  File is Simulated_depression.dta.dat ;
+Variable:
+  Names are 
+     subject mat_edu fin_b mat_dep mfq_t1 mfq_t2 mfq_t3 mfq_t4 mfq_t5 mfq_t6 mfq_t7
+     mfq_t8 mfq_t9 dep_26 selfe age_t1 age_t2 age_t3 age_t4 age_t5 age_t6
+     age_t7 age_t8 age_t9;
+  Missing are all (-9999) ;
+  usevariables are subject mfq_t1 mfq_t2 mfq_t3 mfq_t4 mfq_t5 mfq_t6 mfq_t7
+     mfq_t8 mfq_t9;
+  classes = c(5);
+  AUXILIARY subject; 
+Analysis: 
+    processors = 2 (starts);
+    type = mixture;
+    starts =3500 350;
+    !stiterations = 25;
+    !stscale = 25;
+MODEL:
+    %overall%
+    i by mfq_t1@1 mfq_t2@1 mfq_t3@1 mfq_t4@1 mfq_t5@1 mfq_t6@1 mfq_t7@1 mfq_t8@1 mfq_t9@1;
+    s by mfq_t1@0 mfq_t2@0.215 mfq_t3@0.315 mfq_t4@0.605 mfq_t5@0.715 mfq_t6@0.805 
+    mfq_t7@1.125 mfq_t8@1.225 mfq_t9@1.315;
+    q by mfq_t1@0 mfq_t2@0.046 mfq_t3@0.099 mfq_t4@0.366 mfq_t5@0.511 mfq_t6@0.648 
+    mfq_t7@1.266 mfq_t8@1.501 mfq_t9@1.729;
+    [mfq_t1@0 mfq_t2@0 mfq_t3@0 mfq_t4@0 mfq_t5@0 mfq_t6@0 mfq_t7@0 mfq_t8@0 mfq_t9@0];
+    mfq_t1 mfq_t2 mfq_t3 mfq_t4 mfq_t5 mfq_t6 mfq_t7 mfq_t8 mfq_t9 (eqresvar);
+    [i s q];
+    i@0 s q;
+    i with s@0;
+    i with q@0;
+    s with q;
+    
+  %c#1% 
+  [i s q]; 
+ 
+  %c#2% 
+  [i s q]; 
+
+  %c#3% 
+  [i s q]; 
+
+  %c#4% 
+  [i s q];
+
+  %c#5% 
+  [i s q];
+
+OUTPUT: tech1 tech4;
+
+PLOT: type is plot3;
+  series = mfq_t1 mfq_t2 mfq_t3 mfq_t4 mfq_t5 mfq_t6 mfq_t7 mfq_t8 mfq_t9 (s);
+
+Savedata: file is 5_class_probs_simulated.txt;
+   save = cprobabilities;

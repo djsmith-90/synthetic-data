@@ -1,0 +1,89 @@
+##################################################################################################
+#The following is an R script for using Synthpop to simulate the ALSPAC data used in this project#
+##################################################################################################
+
+#######################
+#Import height dataset#
+#######################
+
+#Import packages
+
+library(synthpop)
+library(foreign)
+library(haven)
+
+#Import height dataset
+
+setwd("PATH/Synthpop data note")
+
+sim_data_complete <- read_dta("PATH/real_ALSPAC_height_data.dta")
+View(sim_data_complete)
+
+#THIS IMPORTS ALL THE DATA!!!!
+
+ods <- sim_data_complete
+
+head(ods)
+
+#Set seed
+
+my.seed <- 1234567
+
+#Synthesis
+
+sds <- syn(ods, seed = my.seed)
+
+#Checking the synthesis
+
+summary (ods)
+summary (sds)
+
+compare(sds, ods)
+compare(sds, ods, stat = "count", nrow = 3, ncol = 5)
+
+compare(sds.default, ods, nrow = 3, ncol = 4)$plot
+
+syn1_sdc <- sdc(sds, ods, rm.replicated.uniques = TRUE)
+
+#Exporting the data
+
+write.syn(syn1_sdc, "Simulated_height", filetype = c("Stata"), convert.factors = "numeric", 
+          data.labels = TRUE, save.complete = TRUE, extended.info = TRUE)
+
+###########################
+#Import depression dataset#
+###########################
+
+sim_data_complete <- read_dta("PATH/real_ALSPAC_depression_data.dta")
+View(sim_data_complete)
+
+#THIS IMPORTS ALL THE DATA!!!!
+
+ods <- sim_data_complete
+
+head(ods)
+
+#Set seed
+
+my.seed <- 1234567
+
+#Synthesis
+
+sds <- syn(ods, seed = my.seed)
+
+#Checking the synthesis
+
+summary (ods)
+summary (sds)
+
+compare(sds, ods)
+compare(sds, ods, stat = "count", nrow = 3, ncol = 5)
+
+compare(sds.default, ods, nrow = 3, ncol = 4)$plot
+
+syn1_sdc <- sdc(sds, ods, rm.replicated.uniques = TRUE)
+
+#Exporting the data
+
+write.syn(syn1_sdc, "Simulated_depression", filetype = c("Stata"), convert.factors = "numeric", 
+          data.labels = TRUE, save.complete = TRUE, extended.info = TRUE)
